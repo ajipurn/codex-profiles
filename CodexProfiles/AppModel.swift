@@ -287,7 +287,6 @@ final class AppModel {
         do {
             settings.restartEditorServer = false
             try switcher.store.saveSettings(settings)
-            showSuccess("Settings updated")
         } catch {
             settings = switcher.store.loadSettings()
             status = nil

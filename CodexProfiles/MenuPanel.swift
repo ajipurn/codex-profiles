@@ -72,7 +72,8 @@ struct MenuPanel: View {
         let rowsHeight = model.profiles.isEmpty || model.visibleProfiles.isEmpty
             ? 175 : 50 + model.visibleProfiles.count * (model.settings.hideEmails ? 64 : 78)
         let editorHeight = model.editor == nil ? 0 : 190
-        let feedbackHeight = model.status != nil || model.error != nil ? 58 : 0
+        let feedbackHeight = (model.error != nil && model.editor == nil)
+            || (model.status != nil && (model.isBusy || model.awaitingLogin)) ? 58 : 0
         return min(620, CGFloat(180 + quotaHeight + rowsHeight + editorHeight + feedbackHeight))
     }
 
@@ -179,15 +180,11 @@ struct MenuPanel: View {
                     .fill(Color.red.opacity(0.10))
             )
             .accessibilityElement(children: .contain)
-        } else if let status = model.status {
+        } else if let status = model.status, model.isBusy || model.awaitingLogin {
             HStack(spacing: 9) {
                 if model.isBusy {
                     ProgressView()
                         .controlSize(.small)
-                        .accessibilityHidden(true)
-                } else {
-                    Image(systemName: "checkmark.circle.fill")
-                        .foregroundStyle(.green)
                         .accessibilityHidden(true)
                 }
                 Text(status)
