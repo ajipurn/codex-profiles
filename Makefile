@@ -10,7 +10,7 @@ build:
 	swift build --product CodexProfiles
 
 test:
-	swift run CodexProfilesCheck
+	./scripts/test.sh
 
 package: test
 	chmod +x scripts/package-app.sh

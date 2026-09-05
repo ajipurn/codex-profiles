@@ -25,6 +25,6 @@ jobs:
           python3 scripts/check-repository.py
           python3 -m unittest discover -s scripts/tests -v
       - name: Run Swift regression tests
-        run: swift run CodexProfilesCheck
+        run: make test
       - name: Build and verify packaged app
         run: ./scripts/package-app.sh debug
