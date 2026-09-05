@@ -1,0 +1,28 @@
+.DS_Store
+.derived/
+DerivedData/
+.build/
+dist/
+*.xcodeproj/xcuserdata/
+*.xcworkspace/xcuserdata/
+*.xcuserstate
+xcuserdata/
+.swiftpm/
+.idea/
+Design/AppIcon.iconset/
+Design/*-preview.png
+
+# Local signing material and release credentials
+.local/
+.env
+.env.*
+*.p12
+*.p8
+*.pem
+*.key
+*.mobileprovision
+*private-key*
+# Never publish saved account credentials
+auth.json
+profiles/
+__pycache__/

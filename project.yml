@@ -1,0 +1,61 @@
+name: CodexProfiles
+options:
+  bundleIdPrefix: dev.aji
+  deploymentTarget:
+    macOS: "14.0"
+  createIntermediateGroups: true
+  generateEmptyDirectories: true
+settings:
+  base:
+    SWIFT_VERSION: "6.0"
+    MACOSX_DEPLOYMENT_TARGET: "14.0"
+    SWIFT_STRICT_CONCURRENCY: complete
+    ENABLE_USER_SCRIPT_SANDBOXING: NO
+packages:
+  Sparkle:
+    url: https://github.com/sparkle-project/Sparkle
+    exactVersion: 2.9.6
+targets:
+  CodexProfilesCore:
+    type: library.static
+    platform: macOS
+    sources:
+      - CodexProfilesCore
+    settings:
+      base:
+        PRODUCT_NAME: CodexProfilesCore
+        PRODUCT_BUNDLE_IDENTIFIER: dev.aji.CodexProfilesCore
+        SKIP_INSTALL: YES
+        GENERATE_INFOPLIST_FILE: YES
+        MACH_O_TYPE: staticlib
+        ENABLE_TESTABILITY: YES
+  CodexProfiles:
+    type: application
+    platform: macOS
+    sources:
+      - CodexProfiles
+    dependencies:
+      - target: CodexProfilesCore
+      - package: Sparkle
+    settings:
+      base:
+        PRODUCT_NAME: CodexProfiles
+        PRODUCT_BUNDLE_IDENTIFIER: dev.aji.CodexProfiles
+        INFOPLIST_FILE: CodexProfiles/Info.plist
+        GENERATE_INFOPLIST_FILE: NO
+        CODE_SIGN_ENTITLEMENTS: CodexProfiles/CodexProfiles.entitlements
+        CODE_SIGN_IDENTITY: "-"
+        CODE_SIGN_STYLE: Manual
+        DEVELOPMENT_TEAM: ""
+        ENABLE_HARDENED_RUNTIME: YES
+        ENABLE_APP_SANDBOX: NO
+        ASSETCATALOG_COMPILER_APPICON_NAME: AppIcon
+        COMBINE_HIDPI_IMAGES: YES
+        LD_RUNPATH_SEARCH_PATHS: "@executable_path/../Frameworks"
+        INFOPLIST_KEY_LSUIElement: YES
+schemes:
+  CodexProfiles:
+    build:
+      targets:
+        CodexProfiles: all
+        CodexProfilesCore: all
