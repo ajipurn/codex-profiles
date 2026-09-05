@@ -33,6 +33,7 @@ if [[ -d "$BIN_DIR/CodexProfiles_CodexProfiles.bundle" ]]; then
 fi
 ditto "$SPARKLE" "$FRAMEWORKS_DIR/Sparkle.framework"
 cp THIRD_PARTY_NOTICES.md "$RESOURCES_DIR/"
+cp LICENSE "$RESOURCES_DIR/LICENSE.txt"
 
 IDENTITY="${CODE_SIGN_IDENTITY:--}"
 SIGN_ARGS=(--force --sign "$IDENTITY")
