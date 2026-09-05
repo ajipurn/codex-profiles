@@ -79,6 +79,16 @@ make release
 
 This increments the patch version and build number, generates release notes from commit subjects (or uses an existing version-specific notes file), updates the changelog, runs checks, commits release metadata, pushes main and its tag, waits for GitHub Actions, downloads and verifies the universal archive signature, and publishes the release as latest. Publishing makes the update available to installed apps immediately.
 
+Choose the semantic version increment with `BUMP` (default: `patch`):
+
+```sh
+make release BUMP=patch  # 1.2.9 -> 1.2.10: bug fixes
+make release BUMP=minor  # 1.2.9 -> 1.3.0: compatible new features
+make release BUMP=major  # 1.2.9 -> 2.0.0: breaking changes
+```
+
+Minor and major increments reset lower version components to zero. The build number always increases by one. The increment is chosen explicitly, not inferred from commit messages. Do not combine `BUMP` with `VERSION`.
+
 To choose a version explicitly:
 
 ```sh

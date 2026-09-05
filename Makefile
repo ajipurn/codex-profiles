@@ -23,7 +23,7 @@ open: project
 	open CodexProfiles.xcodeproj
 
 release:
-	python3 scripts/release.py --version "$(VERSION)"
+	python3 scripts/release.py --version "$(VERSION)" --bump "$(BUMP)"
 
 release-local: test
 	./scripts/build-release.sh

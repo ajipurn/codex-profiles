@@ -17,8 +17,17 @@ def run(*args, capture=False):
     return subprocess.check_output(args, text=True).strip() if capture else subprocess.run(args, check=True)
 
 
-def next_version(current, requested):
-    version = requested or '.'.join([*current.split('.')[:2], str(int(current.split('.')[2]) + 1)])
+def next_version(current, requested, bump=''):
+    if bump and requested:
+        raise ValueError('Use either BUMP or VERSION, not both.')
+    if bump not in ('', 'major', 'minor', 'patch'):
+        raise ValueError('BUMP must be major, minor, or patch.')
+    parts = list(map(int, current.split('.')))
+    index = {'major': 0, 'minor': 1, 'patch': 2}[bump or 'patch']
+    parts[index] += 1
+    for trailing in range(index + 1, 3):
+        parts[trailing] = 0
+    version = requested or '.'.join(map(str, parts))
     if not re.fullmatch(r'(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)', version):
         raise ValueError('VERSION must be MAJOR.MINOR.PATCH')
     if tuple(map(int, version.split('.'))) < tuple(map(int, current.split('.'))):
@@ -29,6 +38,7 @@ def next_version(current, requested):
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('--version', default='')
+    parser.add_argument('--bump', default='', choices=['', 'major', 'minor', 'patch'])
     args = parser.parse_args()
     os.chdir(ROOT)
     if run('git', 'status', '--porcelain', capture=True):
@@ -43,7 +53,7 @@ def main():
     run('gh', 'auth', 'status')
     run('git', 'fetch', 'origin', 'main', '--tags')
     run('git', 'merge-base', '--is-ancestor', 'origin/main', 'HEAD')
-    version = next_version(config['version'], args.version)
+    version = next_version(config['version'], args.version, args.bump)
     tag = 'v' + version
     print(f'Releasing {tag}. To resume after a failure: make release VERSION={version}', flush=True)
     if version != config['version']:
