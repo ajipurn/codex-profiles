@@ -1,5 +1,12 @@
 # Changelog
 
+## 1.2.0
+
+- feat: support semantic release version increments
+- feat: add one-command GitHub release publishing
+- fix: hide routine success notifications
+- fix: refresh cached release badge
+
 ## 1.1.0
 
 First public release.
