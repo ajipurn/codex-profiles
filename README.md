@@ -1,7 +1,7 @@
 # Codex Profiles
 
 [![CI](https://github.com/ajipurn/codex-profiles/actions/workflows/ci.yml/badge.svg)](https://github.com/ajipurn/codex-profiles/actions/workflows/ci.yml)
-[![Release](https://img.shields.io/github/v/release/ajipurn/codex-profiles)](https://github.com/ajipurn/codex-profiles/releases/latest)
+[![Release](https://img.shields.io/github/v/release/ajipurn/codex-profiles?cacheSeconds=300)](https://github.com/ajipurn/codex-profiles/releases/latest)
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
 
 A native macOS menu bar app for switching Codex accounts and keeping track of remaining usage.
