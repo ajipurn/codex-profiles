@@ -1,6 +1,6 @@
 {
-  "version": "1.1.0",
-  "build": 2,
-  "repository": "ajipurn/codex-profiles",
-  "sparkle_public_key": "jUroSVrdl1ciaMXVKP8pKeKm/hENLP6e76vh4QAFgxk="
+  "build" : 2,
+  "repository" : "ajipurn\/codex-profiles",
+  "sparkle_public_key" : "PCoAHe3oH1CUPJ\/ZiP2JGTK5ttUUtdIFmWCyQJW7JCk=",
+  "version" : "1.1.0"
 }

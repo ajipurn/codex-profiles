@@ -24,7 +24,7 @@ if [[ -n "${NOTARY_KEYCHAIN_PROFILE:-}" ]]; then
   ditto -c -k --sequesterRsrc --keepParent "$APP" "$ARCHIVE"
 fi
 
-SIGN_ARGS=(--account dev.aji.CodexProfiles)
+SIGN_ARGS=(--account dev.aji.CodexProfiles.release)
 SIGNING_FILE=""
 trap '[[ -z "$SIGNING_FILE" ]] || rm -f "$SIGNING_FILE"' EXIT
 if [[ -n "${SPARKLE_PRIVATE_KEY:-}" ]]; then

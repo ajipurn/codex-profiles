@@ -1,7 +1,9 @@
 #!/usr/bin/env swift
 import CryptoKit
 import Foundation
+#if canImport(FoundationXML)
 import FoundationXML
+#endif
 
 final class EnclosureParser: NSObject, XMLParserDelegate {
     var signatures: [String: String] = [:]
@@ -15,7 +17,10 @@ final class EnclosureParser: NSObject, XMLParserDelegate {
 }
 
 do {
-    guard CommandLine.arguments.count == 4 else { throw CocoaError(.validationMissingMandatoryProperty) }
+    guard CommandLine.arguments.count == 4 else {
+        fputs("Usage: verify-update.swift appcast.xml archive.zip public-key\n", stderr)
+        exit(2)
+    }
     let feed = URL(fileURLWithPath: CommandLine.arguments[1])
     let archive = URL(fileURLWithPath: CommandLine.arguments[2])
     let delegate = EnclosureParser()

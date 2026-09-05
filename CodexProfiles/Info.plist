@@ -39,7 +39,7 @@
 	<key>SUFeedURL</key>
 	<string>https://github.com/ajipurn/codex-profiles/releases/latest/download/appcast.xml</string>
 	<key>SUPublicEDKey</key>
-	<string>jUroSVrdl1ciaMXVKP8pKeKm/hENLP6e76vh4QAFgxk=</string>
+	<string>PCoAHe3oH1CUPJ/ZiP2JGTK5ttUUtdIFmWCyQJW7JCk=</string>
 	<key>SUEnableAutomaticChecks</key>
 	<true/>
 	<key>SUAutomaticallyUpdate</key>

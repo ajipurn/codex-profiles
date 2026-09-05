@@ -21,7 +21,7 @@ Pre-releases are not distributed by this stable workflow. Published release asse
 
 ## First-time signing setup
 
-The public key in `Config/release.json` is already assigned to this project. **Do not generate a replacement key for an existing release.** The corresponding private key is stored in the maintainer's login Keychain under Sparkle's `dev.aji.CodexProfiles` account.
+The public key in `Config/release.json` is already assigned to this project. **Do not generate a replacement key for an existing release.** The corresponding private key is stored in the maintainer's login Keychain under Sparkle's `dev.aji.CodexProfiles.release` account.
 
 On the original signing Mac, this command reuses that key and verifies the public key matches:
 
@@ -39,7 +39,7 @@ signing_file="$(mktemp)"
 # generate_keys refuses to overwrite an existing file; remove the empty mktemp file first.
 rm "$signing_file"
 trap 'rm -f "$signing_file"' EXIT
-.build/artifacts/sparkle/Sparkle/bin/generate_keys --account dev.aji.CodexProfiles -x "$signing_file"
+.build/artifacts/sparkle/Sparkle/bin/generate_keys --account dev.aji.CodexProfiles.release -x "$signing_file"
 gh secret set SPARKLE_PRIVATE_KEY --repo ajipurn/codex-profiles < "$signing_file"
 rm "$signing_file"
 trap - EXIT

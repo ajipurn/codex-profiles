@@ -4,7 +4,7 @@ ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 cd "$ROOT"
 swift package resolve
 TOOLS="$ROOT/.build/artifacts/sparkle/Sparkle/bin"
-ACCOUNT="dev.aji.CodexProfiles"
+ACCOUNT="dev.aji.CodexProfiles.release"
 # Dedicated keychain account; rerunning reuses the existing signing key.
 "$TOOLS/generate_keys" --account "$ACCOUNT"
 PUBLIC_KEY="$("$TOOLS/generate_keys" --account "$ACCOUNT" -p)"

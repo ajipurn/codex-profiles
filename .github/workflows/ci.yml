@@ -26,5 +26,7 @@ jobs:
           python3 -m unittest discover -s scripts/tests -v
       - name: Run Swift regression tests
         run: make test
-      - name: Build and verify packaged app
+      - name: Build and verify universal packaged app
+        env:
+          BUILD_ARCHS: arm64 x86_64
         run: ./scripts/package-app.sh debug
