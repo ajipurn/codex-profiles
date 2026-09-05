@@ -69,6 +69,26 @@ Also add these to enable notarization:
 
 CI uses a temporary signing Keychain, notarizes the archive, staples the app, regenerates the archive, and only then creates Sparkle signatures and checksums. Temporary credentials are removed at the end of the job. Update the README and release notes when notarization is enabled and verified.
 
+## One-command release
+
+Commit your application changes on `main`, then run:
+
+```sh
+make release
+```
+
+This increments the patch version and build number, generates release notes from commit subjects (or uses an existing version-specific notes file), updates the changelog, runs checks, commits release metadata, pushes main and its tag, waits for GitHub Actions, downloads and verifies the universal archive signature, and publishes the release as latest. Publishing makes the update available to installed apps immediately.
+
+To choose a version explicitly:
+
+```sh
+make release VERSION=1.1.1
+```
+
+Requires authenticated `gh`, Git push access, Python 3, Swift, and the configured CI signing secret. The command refuses uncommitted changes, a different branch, or a mismatched origin. Review commit subjects or write `docs/releases/<version>.md` before running it. This verifies artifacts automatically; it does not perform an interactive old-to-new installation test. Use the manual draft workflow below when that review is needed before publication.
+
+If a local check fails after metadata preparation, fix the issue and commit the prepared changes. Resume with the same explicit `VERSION`; do not run without it, which would increment again. If CI fails, inspect and rerun the failed workflow before resuming. Existing tags must match HEAD and are never moved; source corrections after tagging require a new version. If publication succeeded but the final network check failed, inspect the public release instead of republishing it.
+
 ## Publish a new version
 
 1. Update `version` and increase `build` in `Config/release.json`. Use a stable `MAJOR.MINOR.PATCH` version. Keep `repository` and `sparkle_public_key` unchanged.
@@ -108,7 +128,7 @@ If a workflow fails while the release is still a draft, fix the cause and rerun 
 ## Local release validation
 
 ```sh
-make release
+make release-local
 ```
 
 This builds for the current Mac architecture and signs using the dedicated Keychain key. It verifies the update signature against the public key embedded in the app and checks that a modified archive is rejected. Local output is in `dist/releases/<version>`.
@@ -116,12 +136,12 @@ This builds for the current Mac architecture and signs using the dedicated Keych
 For universal output on a Mac with full Xcode:
 
 ```sh
-BUILD_ARCHS="arm64 x86_64" make release
+BUILD_ARCHS="arm64 x86_64" make release-local-local
 ```
 
 `publish-draft.sh` requires a universal archive and a remote version tag. Native local archives are for development verification. The automatic pipeline creates the distributable universal archive.
 
-For local notarization, configure a Developer ID identity and a stored notarytool profile, then pass `CODE_SIGN_IDENTITY` and `NOTARY_KEYCHAIN_PROFILE` to `make release`.
+For local notarization, configure a Developer ID identity and a stored notarytool profile, then pass `CODE_SIGN_IDENTITY` and `NOTARY_KEYCHAIN_PROFILE` to `make release-local`.
 
 ## Updater troubleshooting
 

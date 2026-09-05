@@ -1,4 +1,4 @@
-.PHONY: project build test run package release open icons signing-key
+.PHONY: project build test run package release release-local open icons signing-key
 
 project:
 	xcodegen generate
@@ -22,7 +22,10 @@ run: package
 open: project
 	open CodexProfiles.xcodeproj
 
-release: test
+release:
+	python3 scripts/release.py --version "$(VERSION)"
+
+release-local: test
 	./scripts/build-release.sh
 
 signing-key:
