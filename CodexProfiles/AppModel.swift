@@ -30,9 +30,13 @@ final class AppModel {
     private var loginPollTask: Task<Void, Never>?
     private var usageTask: Task<Void, Never>?
     private var autoRefreshTask: Task<Void, Never>?
+    private var usagePollTask: Task<Void, Never>?
     private var statusClearTask: Task<Void, Never>?
     private var previousProfileBeforeLogin: UUID?
     private var lastUsageLoad: Date?
+    private var usageRefreshGeneration = 0
+    private var usagePollInFlight = false
+    private var isUsagePanelOpen = false
 
     var liveUsage = UsageLoadState()
     var profileUsage: [UUID: UsageLoadState] = [:]
@@ -59,13 +63,16 @@ final class AppModel {
             clients: SystemCodexClients()
         )
         refresh()
+        refreshUsage(force: true, includeSaved: true, silent: true)
         autoRefreshTask = Task { [weak self] in
             while !Task.isCancelled {
-                do { try await Task.sleep(for: .seconds(120)) } catch { return }
+                do { try await Task.sleep(for: .seconds(30)) } catch { return }
                 guard let self else { return }
                 if self.settings.autoRefresh && !self.isBusy && !self.pendingNewLogin {
                     self.refresh()
-                    self.refreshUsage(force: true)
+                    if !self.isUsagePanelOpen {
+                        self.refreshUsage(force: true, includeSaved: true, silent: true)
+                    }
                 }
             }
         }
@@ -86,8 +93,8 @@ final class AppModel {
     var menuBarUsage: String? {
         guard settings.showMenuBarUsage, let usage = liveUsage.usage else { return nil }
         guard liveUsage.error == nil else { return "—" }
-        if usage.severity == .exhausted { return "0%" }
-        return usage.windows.map(\.remainingDisplay).min().map { "\($0)%" }
+        guard let fiveHourWindow = usage.windows.first(where: { $0.label == "5h" }) else { return "—" }
+        return "\(fiveHourWindow.remainingDisplay)%"
     }
 
     func toggleFavorite(_ profile: Profile) {
@@ -148,18 +155,52 @@ final class AppModel {
         error = nil
     }
 
-    func refreshUsage(force: Bool = false) {
-        guard !isDemo, !isBusy, !pendingNewLogin, !isRefreshingUsage else { return }
-        if !force, let lastUsageLoad, Date().timeIntervalSince(lastUsageLoad) < 45,
+    func refreshUsage(force: Bool = false, includeSaved: Bool = true, silent: Bool = false) {
+        guard !isDemo, !isBusy, !pendingNewLogin else { return }
+        if !force, let lastUsageLoad, Date().timeIntervalSince(lastUsageLoad) < 5,
            liveUsage.usage != nil
         {
             return
         }
-        isRefreshingUsage = true
-        usageTask = Task {
-            defer { self.isRefreshingUsage = false }
-            await self.loadUsage()
+        if silent, usagePollInFlight { return }
+        usageRefreshGeneration += 1
+        let generation = usageRefreshGeneration
+        if !silent {
+            usageTask?.cancel()
+            isRefreshingUsage = true
         }
+        usagePollInFlight = true
+        usageTask = Task {
+            defer {
+                if generation == self.usageRefreshGeneration {
+                    self.usagePollInFlight = false
+                    self.isRefreshingUsage = false
+                }
+            }
+            await self.loadUsage(includeSaved: includeSaved, showLoading: !silent)
+        }
+    }
+
+    func startLiveUsagePolling() {
+        guard !isDemo else { return }
+        isUsagePanelOpen = true
+        usagePollTask?.cancel()
+        refreshUsage(force: true, includeSaved: true, silent: liveUsage.usage != nil)
+        usagePollTask = Task { [weak self] in
+            var ticks = 0
+            while !Task.isCancelled {
+                do { try await Task.sleep(for: .seconds(4)) } catch { return }
+                guard let self, self.isUsagePanelOpen else { return }
+                ticks += 1
+                self.refreshUsage(force: true, includeSaved: ticks.isMultiple(of: 8), silent: true)
+            }
+        }
+    }
+
+    func stopLiveUsagePolling() {
+        isUsagePanelOpen = false
+        usagePollTask?.cancel()
+        usagePollTask = nil
     }
 
     func beginSave() {
@@ -297,13 +338,14 @@ final class AppModel {
     func quit() {
         loginPollTask?.cancel()
         usageTask?.cancel()
+        usagePollTask?.cancel()
         statusClearTask?.cancel()
         autoRefreshTask?.cancel()
         if isDemo { try? FileManager.default.removeItem(at: switcher.paths.storeRoot.deletingLastPathComponent()) }
         NSApp.terminate(nil)
     }
 
-    private func loadUsage() async {
+    private func loadUsage(includeSaved: Bool = true, showLoading: Bool = true) async {
         defer {
             liveUsage.isLoading = false
             for id in profileUsage.keys { profileUsage[id]?.isLoading = false }
@@ -313,7 +355,7 @@ final class AppModel {
         let profiles = self.profiles
 
         if let liveFile, liveFile.isChatGPTSession {
-            liveUsage.isLoading = true
+            if showLoading { liveUsage.isLoading = true }
             do {
                 let result = try await usageClient.fetch(snapshot: liveFile)
                 guard !Task.isCancelled else { return }
@@ -331,6 +373,9 @@ final class AppModel {
             } catch {
                 guard !Task.isCancelled else { return }
                 guard (try? switcher.liveState().file) == liveFile else { return }
+                if !showLoading, liveUsage.usage != nil {
+                    return
+                }
                 liveUsage = UsageLoadState(usage: liveUsage.usage, error: usageMessage(for: error))
                 if let matchingID { profileUsage[matchingID] = liveUsage }
             }
@@ -338,14 +383,18 @@ final class AppModel {
             liveUsage = .idle
         }
 
-        for profile in profiles where profile.id != matchingID {
-            guard !Task.isCancelled else { return }
-            var previous = profileUsage[profile.id] ?? .idle
-            previous.isLoading = true
-            profileUsage[profile.id] = previous
-            let state = await fetchProfileUsage(profile.id)
-            guard !Task.isCancelled else { return }
-            profileUsage[state.0] = state.1
+        if includeSaved {
+            for profile in profiles where profile.id != matchingID {
+                guard !Task.isCancelled else { return }
+                if showLoading {
+                    var previous = profileUsage[profile.id] ?? .idle
+                    previous.isLoading = true
+                    profileUsage[profile.id] = previous
+                }
+                let state = await fetchProfileUsage(profile.id)
+                guard !Task.isCancelled else { return }
+                profileUsage[state.0] = state.1
+            }
         }
         if !Task.isCancelled {
             lastUsageLoad = Date()

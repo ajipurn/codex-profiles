@@ -3,6 +3,7 @@ import CodexProfilesCore
 
 struct UsageCard: View {
     var state: UsageLoadState
+    var now: Date = .now
     var onRefresh: () -> Void = {}
 
     var body: some View {
@@ -41,7 +42,7 @@ struct UsageCard: View {
                     } else {
                         VStack(alignment: .leading, spacing: 9) {
                             ForEach(Array(usage.windows.enumerated()), id: \.offset) { _, window in
-                                UsageMeter(window: window)
+                                UsageMeter(window: window, now: now)
                             }
                         }
                     }
@@ -60,7 +61,7 @@ struct UsageCard: View {
                         .foregroundStyle(.orange)
                     }
 
-                    Text("Updated \(usage.fetchedAt.formatted(date: .omitted, time: .shortened))")
+                    Text(freshnessText)
                         .font(.system(size: 10))
                         .foregroundStyle(.secondary)
                         .help(usage.fetchedAt.formatted(date: .abbreviated, time: .standard))
@@ -108,10 +109,19 @@ struct UsageCard: View {
             }
         }
     }
+
+    private var freshnessText: String {
+        guard let fetchedAt = state.usage?.fetchedAt else { return "" }
+        let age = now.timeIntervalSince(fetchedAt)
+        if age < 8 { return "Live" }
+        if age < 60 { return "Updated \(max(1, Int(age)))s ago" }
+        return "Updated \(fetchedAt.formatted(date: .omitted, time: .shortened))"
+    }
 }
 
 struct UsageMeter: View {
     var window: UsageWindow
+    var now: Date = .now
 
     var body: some View {
         VStack(alignment: .leading, spacing: 5) {
@@ -123,11 +133,15 @@ struct UsageMeter: View {
                     .font(.caption.weight(.semibold).monospacedDigit())
                     .foregroundStyle(tint)
                 Spacer(minLength: 8)
-                if let resetsIn = window.resetsIn {
-                    Text((window.resetAt ?? .distantFuture) <= Date() ? "Reset due · refresh" : "Resets in \(resetsIn)")
+                if let resetAt = window.resetAt, resetAt <= now {
+                    Text("Reset due · refresh")
                         .font(.caption.monospacedDigit())
                         .foregroundStyle(.secondary)
-                        .help(window.resetAt?.formatted(date: .abbreviated, time: .shortened) ?? "")
+                } else if let caption = window.resetCaption {
+                    Text(caption)
+                        .font(.caption.monospacedDigit())
+                        .foregroundStyle(.secondary)
+                        .help(window.resetsIn.map { "Resets in \($0)" } ?? "")
                 }
             }
             QuotaBar(progress: window.remainingPercent / 100, tint: tint)

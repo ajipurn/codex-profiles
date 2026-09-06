@@ -16,7 +16,10 @@ public struct UsageWindow: Equatable, Sendable {
     }
 
     public var remainingDisplay: Int {
-        Int(remainingPercent.rounded())
+        let value = remainingPercent
+        if value <= 0 { return 0 }
+        if value >= 99.5 { return 100 }
+        return Int(value.rounded())
     }
 
     public var label: String {
@@ -27,6 +30,17 @@ public struct UsageWindow: Equatable, Sendable {
         guard let resetAt else { return nil }
         return Self.compactDuration(resetAt.timeIntervalSinceNow)
     }
+
+    public var resetCaption: String? {
+        guard let resetAt, resetAt > Date() else { return nil }
+        let calendar = Calendar.current
+        if calendar.isDateInToday(resetAt) || calendar.isDateInTomorrow(resetAt) {
+            return resetAt.formatted(Date.FormatStyle(date: .omitted, time: .shortened).locale(Self.captionLocale))
+        }
+        return resetAt.formatted(Date.FormatStyle().month(.abbreviated).day().locale(Self.captionLocale))
+    }
+
+    private static let captionLocale = Locale(identifier: "en_US")
 
     public static func label(forWindowSeconds seconds: Int?) -> String {
         guard let seconds, seconds > 0 else { return "Limit" }
@@ -133,9 +147,17 @@ public struct CodexUsage: Equatable, Sendable {
     }
 
     static func window(_ value: Any?, fetchedAt: Date) -> UsageWindow? {
-        guard let object = value as? [String: Any],
-              let used = double(object["used_percent"]), used.isFinite
-        else { return nil }
+        guard let object = value as? [String: Any] else { return nil }
+        let used: Double
+        if let remaining = double(object["remaining_percent"]) ?? double(object["percent_remaining"]),
+           remaining.isFinite
+        {
+            used = 100 - remaining
+        } else if let usedValue = double(object["used_percent"]), usedValue.isFinite {
+            used = usedValue
+        } else {
+            return nil
+        }
         let seconds = int(object["limit_window_seconds"])
         var resetAt: Date?
         if let timestamp = double(object["reset_at"]) {
@@ -173,6 +195,9 @@ public struct CodexUsage: Equatable, Sendable {
         if let value = value as? Double { return value }
         if let value = value as? Int { return Double(value) }
         if let value = value as? NSNumber { return value.doubleValue }
+        if let value = value as? String {
+            return Double(value.trimmingCharacters(in: .whitespacesAndNewlines))
+        }
         return nil
     }
 }

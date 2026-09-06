@@ -147,6 +147,8 @@ enum CodexProfilesCheck {
             ("prefers ChatGPT user id over workspace account id", parseUserNotWorkspace),
             ("reads workspace account id from auth tokens", parseWorkspaceAccountID),
             ("parses Codex 5h and weekly usage windows", parseUsageWindows),
+            ("prefers ChatGPT remaining_percent over used_percent", parseRemainingPercent),
+            ("formats quota reset like ChatGPT", formatResetCaption),
             ("keeps a custom nickname when refreshing tokens", applyTokenRefreshPreservesIdentity),
         ]
         for (name, test) in cases {
@@ -638,6 +640,37 @@ enum CodexProfilesCheck {
         )
         try expectEqual(exhausted.severity, .exhausted)
         try expectEqual(exhausted.compactLine, "Limit reached")
+    }
+
+    static func parseRemainingPercent() throws {
+        let usage = CodexUsage.parse(root: [
+            "rate_limit": [
+                "primary_window": [
+                    "used_percent": 85,
+                    "remaining_percent": 17,
+                    "limit_window_seconds": 18_000,
+                ],
+                "secondary_window": [
+                    "remaining_percent": "87.4",
+                    "limit_window_seconds": 604_800,
+                ],
+            ],
+        ])
+        try expectEqual(usage.primary?.remainingDisplay, 17, "ChatGPT remaining_percent should win over used_percent")
+        try expectEqual(usage.secondary?.remainingDisplay, 87)
+        try expectEqual(usage.secondary?.label, "Wk")
+    }
+
+    static func formatResetCaption() throws {
+        let soon = Date().addingTimeInterval(3_600)
+        let soonCaption = UsageWindow(usedPercent: 83, resetAt: soon, windowSeconds: 18_000).resetCaption
+        try expect(soonCaption != nil, "today’s reset should show a clock time")
+        try expect(soonCaption?.contains(":") == true, "today’s reset should look like 3:11 PM, got \(soonCaption ?? "nil")")
+
+        let later = Date().addingTimeInterval(6 * 86_400)
+        let laterCaption = UsageWindow(usedPercent: 13, resetAt: later, windowSeconds: 604_800).resetCaption
+        try expect(laterCaption != nil, "weekly reset should show a date")
+        try expect(laterCaption?.contains(":") != true, "weekly reset should look like Sep 12, got \(laterCaption ?? "nil")")
     }
 
     static func applyTokenRefreshPreservesIdentity() throws {

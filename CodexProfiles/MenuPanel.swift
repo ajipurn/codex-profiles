@@ -31,7 +31,10 @@ struct MenuPanel: View {
         .background(.regularMaterial)
         .onAppear {
             model.refresh()
-            model.refreshUsage()
+            model.startLiveUsagePolling()
+        }
+        .onDisappear {
+            model.stopLiveUsagePolling()
         }
         .background {
             Button("Find account") { searchFocused = true }
@@ -137,8 +140,8 @@ struct MenuPanel: View {
             }
 
             if model.live?.file?.isChatGPTSession == true {
-                TimelineView(.periodic(from: .now, by: 30)) { _ in
-                    UsageCard(state: model.liveUsage) {
+                TimelineView(.periodic(from: .now, by: 1)) { context in
+                    UsageCard(state: model.liveUsage, now: context.date) {
                         model.refreshUsage(force: true)
                     }
                 }
@@ -604,7 +607,7 @@ struct MenuPanel: View {
             Menu {
                 Toggle("Restart ChatGPT after switching", isOn: setting(\.restartChatGPT))
                 Toggle("Refresh automatically every 2 minutes", isOn: setting(\.autoRefresh))
-                Toggle("Show remaining quota in menu bar", isOn: setting(\.showMenuBarUsage))
+                Toggle("Show 5-hour remaining quota in menu bar", isOn: setting(\.showMenuBarUsage))
                 Toggle("Hide email addresses", isOn: setting(\.hideEmails))
                 Divider()
                 if let updater = model.updater {
