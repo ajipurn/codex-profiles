@@ -1,5 +1,9 @@
 # Changelog
 
+## 1.2.1
+
+- Improve usage quota fetching and live refresh
+
 ## 1.2.0
 
 - feat: support semantic release version increments
