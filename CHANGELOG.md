@@ -1,5 +1,13 @@
 # Changelog
 
+## 1.3.0
+
+- Polish panel visual hierarchy and readability
+- Add shared design tokens, gradient account avatars, and card styling
+- Fix truncated account text with wider panel and middle-truncation tooltips
+- Clarify row action menu and unify search, favorites, and sort controls
+- Thicken quota bars with gradient fill and pill badges for plan, Active, and Live status
+
 ## 1.2.1
 
 - Improve usage quota fetching and live refresh
