@@ -7,23 +7,24 @@ struct MenuPanel: View {
     @FocusState private var nameFieldFocused: Bool
     @FocusState private var searchFocused: Bool
     @State private var profileConfirmingDelete: Profile?
+    @State private var measuredContentHeight: CGFloat = 0
 
     var body: some View {
         VStack(spacing: 0) {
             ScrollView {
-                VStack(alignment: .leading, spacing: 14) {
-                    titleBar
-                    header
-                    feedback
-                    if model.editor != nil {
-                        nameEditor
-                    }
-                    accountsSection
-                }
-                .padding(PanelDS.contentPadding)
+                panelContent
+                    .background(
+                        GeometryReader { proxy in
+                            Color.clear
+                                .onAppear { measuredContentHeight = proxy.size.height }
+                                .onChange(of: proxy.size.height) { _, height in
+                                    measuredContentHeight = height
+                                }
+                        }
+                    )
             }
             .scrollBounceBehavior(.basedOnSize)
-            .frame(height: panelContentHeight)
+            .frame(height: panelHeight)
 
             footer
         }
@@ -50,7 +51,38 @@ struct MenuPanel: View {
             }
         }
     }
-    private var panelContentHeight: CGFloat {
+
+    /// The plan already appears as a pill next to the usage card, so the subtitle
+    /// shows the workspace instead of repeating it.
+    private var heroSubtitle: String {
+        guard let identity = model.live?.identity else { return model.currentSubtitle }
+        if let org = identity.organizations.first, !org.isEmpty { return org }
+        if let plan = identity.plan, !plan.isEmpty { return AccountIdentity.displayPlan(plan) }
+        return model.currentSubtitle
+    }
+
+    private var panelContent: some View {
+        VStack(alignment: .leading, spacing: 14) {
+            titleBar
+            header
+            feedback
+            if model.editor != nil {
+                nameEditor
+            }
+            accountsSection
+        }
+        .padding(PanelDS.contentPadding)
+    }
+
+    /// Follows the real content height so short lists leave no dead gap, and clamps at a
+    /// maximum so long lists scroll instead of growing the menu bar window forever.
+    private var panelHeight: CGFloat {
+        let measured = measuredContentHeight > 0 ? measuredContentHeight : estimatedContentHeight
+        return min(PanelDS.maxPanelHeight, max(140, measured))
+    }
+
+    /// First-paint fallback used until the content has been measured.
+    private var estimatedContentHeight: CGFloat {
         let quotaHeight: CGFloat = model.live?.file?.isChatGPTSession == true ? 208 : 30
         let rowH: CGFloat = model.settings.hideEmails ? 72 : 80
         let rowCount = CGFloat(max(0, model.visibleProfiles.count))
@@ -65,7 +97,7 @@ struct MenuPanel: View {
         let hasStatusBanner = model.status != nil && (model.isBusy || model.awaitingLogin)
         let feedbackHeight: CGFloat = (hasErrorBanner || hasStatusBanner) ? 60 : 0
         let total: CGFloat = 188 + quotaHeight + rowsHeight + editorHeight + feedbackHeight
-        return min(640, total)
+        return min(PanelDS.maxPanelHeight, total)
     }
 
     private var titleBar: some View {
@@ -116,12 +148,12 @@ struct MenuPanel: View {
                         .lineLimit(1)
                         .truncationMode(.middle)
                         .help(model.currentTitle)
-                    Text(model.currentSubtitle)
+                    Text(heroSubtitle)
                         .font(PanelDS.caption)
                         .foregroundStyle(.secondary)
                         .lineLimit(1)
                         .truncationMode(.middle)
-                        .help(model.currentSubtitle)
+                        .help(heroSubtitle)
                 }
             }
             if model.live?.file?.isChatGPTSession == true {
@@ -438,7 +470,7 @@ struct MenuPanel: View {
                 Image(systemName: "magnifyingglass")
                     .foregroundStyle(.secondary)
                     .font(.system(size: 12, weight: .medium))
-                TextField("Search name, email, workspace…", text: Bindable(model).searchText)
+                TextField("Search accounts", text: Bindable(model).searchText)
                     .textFieldStyle(.plain)
                     .font(PanelDS.body)
                     .focused($searchFocused)
@@ -458,6 +490,8 @@ struct MenuPanel: View {
             .padding(.vertical, 7)
             .background(RoundedRectangle(cornerRadius: PanelDS.controlRadius, style: .continuous).fill(Color.primary.opacity(0.05)))
             .overlay(RoundedRectangle(cornerRadius: PanelDS.controlRadius, style: .continuous).stroke(Color.primary.opacity(0.07), lineWidth: 1))
+            .frame(maxWidth: .infinity)
+            .layoutPriority(1)
 
             Button { model.favoritesOnly.toggle() } label: {
                 Image(systemName: model.favoritesOnly ? "star.fill" : "star")
@@ -545,7 +579,19 @@ struct MenuPanel: View {
                 model.switchTo(profile)
             } label: {
                 HStack(spacing: 11) {
-                    AccountAvatar(seed: profile.identity?.email ?? profile.name, initials: profile.identity?.initials ?? "C", size: 34, emphasized: isActive)
+                    ZStack(alignment: .bottomTrailing) {
+                        AccountAvatar(seed: profile.identity?.email ?? profile.name, initials: profile.identity?.initials ?? "C", size: 34, emphasized: isActive)
+                        if isActive {
+                            Image(systemName: "checkmark")
+                                .font(.system(size: 7, weight: .bold))
+                                .foregroundStyle(.white)
+                                .frame(width: 14, height: 14)
+                                .background(Circle().fill(Color.accentColor))
+                                .overlay(Circle().stroke(.white.opacity(0.9), lineWidth: 1.5))
+                                .offset(x: 2, y: 2)
+                                .accessibilityHidden(true)
+                        }
+                    }
 
                     VStack(alignment: .leading, spacing: 2) {
                         HStack(spacing: 5) {
@@ -554,16 +600,11 @@ struct MenuPanel: View {
                                 .foregroundStyle(.primary)
                                 .lineLimit(1)
                                 .truncationMode(.middle)
+                                .help(model.displayName(for: profile))
                             if model.settings.favoriteProfileIDs.contains(profile.id) {
                                 Image(systemName: "star.fill")
                                     .font(.system(size: 9))
                                     .foregroundStyle(.orange)
-                                    .accessibilityHidden(true)
-                            }
-                            if isActive {
-                                Image(systemName: "checkmark.circle.fill")
-                                    .font(.caption)
-                                    .foregroundStyle(.secondary)
                                     .accessibilityHidden(true)
                             }
                         }
@@ -573,6 +614,7 @@ struct MenuPanel: View {
                                 .font(PanelDS.caption)
                                 .foregroundStyle(.secondary)
                                 .lineLimit(1)
+                                .truncationMode(.middle)
                                 .help(email)
                         }
                         if let subtitle = profile.identity?.subtitle, !subtitle.isEmpty {
@@ -583,10 +625,10 @@ struct MenuPanel: View {
                                 .help(subtitle)
                         }
                     }
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                    .layoutPriority(1)
 
-                    Spacer(minLength: 10)
                     UsageCompactLabel(state: usageState)
-                        .layoutPriority(-1)
                 }
                 .contentShape(Rectangle())
             }
@@ -671,8 +713,8 @@ struct MenuPanel: View {
             .disabled(model.isBusy || model.pendingNewLogin || model.isRefreshingUsage)
 
             if let checked = model.lastUsageCheck {
-                TimelineView(.periodic(from: .now, by: 30)) { _ in
-                    Text(checked, style: .relative)
+                TimelineView(.periodic(from: .now, by: 15)) { context in
+                    Text(lastCheckText(checked, now: context.date))
                         .font(.system(size: 10).monospacedDigit())
                         .foregroundStyle(.secondary)
                         .help("Last checked \(checked.formatted(date: .abbreviated, time: .standard))")
@@ -714,6 +756,16 @@ struct MenuPanel: View {
         .overlay(alignment: .top) {
             Divider().opacity(0.35)
         }
+    }
+
+    /// Compact relative time for the footer. The built-in relative style rendered
+    /// awkward strings such as "1 sec" in a narrow menu bar panel.
+    private func lastCheckText(_ checked: Date, now: Date) -> String {
+        let elapsed = now.timeIntervalSince(checked)
+        if elapsed < 5 { return "just now" }
+        if elapsed < 60 { return "\(max(1, Int(elapsed)))s ago" }
+        if elapsed < 3_600 { return "\(max(1, Int(elapsed / 60)))m ago" }
+        return UsageWindow.compactDuration(elapsed) + " ago"
     }
 
     private func profileAccessibilityLabel(_ profile: Profile, active: Bool) -> String {

@@ -210,30 +210,33 @@ struct UsageCompactLabel: View {
 
     var body: some View {
         if let usage = state?.usage, !usage.windows.isEmpty {
-            VStack(alignment: .trailing, spacing: 3) {
-                ForEach(Array(usage.windows.enumerated()), id: \.offset) { _, window in
-                    HStack(spacing: 5) {
-                        Text("\(window.remainingDisplay)%")
-                            .font(.system(size: 12, weight: .semibold).monospacedDigit())
-                            .foregroundStyle(state?.error == nil ? color(for: window) : .secondary)
-                        Text(window.label)
-                            .font(.system(size: 11))
-                            .foregroundStyle(.secondary)
-                            .frame(minWidth: 22, alignment: .leading)
+            HStack(spacing: 6) {
+                if state?.error != nil {
+                    Image(systemName: "exclamationmark.triangle.fill")
+                        .font(.system(size: 10))
+                        .foregroundStyle(.orange)
+                        .help(state?.error ?? "")
+                }
+                VStack(alignment: .trailing, spacing: 3) {
+                    ForEach(Array(usage.windows.enumerated()), id: \.offset) { _, window in
+                        HStack(spacing: 5) {
+                            Text("\(window.remainingDisplay)%")
+                                .font(.system(size: 12, weight: .semibold).monospacedDigit())
+                                .foregroundStyle(state?.error == nil ? color(for: window) : .secondary)
+                                .frame(minWidth: 34, alignment: .trailing)
+                            Text(window.label)
+                                .font(.system(size: 11))
+                                .foregroundStyle(.secondary)
+                                .frame(minWidth: 20, alignment: .leading)
+                        }
                     }
                 }
+                .lineLimit(1)
             }
-            .frame(minWidth: 62, alignment: .trailing)
-            .lineLimit(1)
+            .fixedSize(horizontal: true, vertical: false)
             .accessibilityElement(children: .combine)
             .accessibilityLabel(usage.compactLine + (state?.error == nil ? " remaining" : ", last known usage"))
             .help(state?.error.map { "Last known usage. " + $0 } ?? "Remaining quota · updated \(usage.fetchedAt.formatted())")
-            if state?.error != nil {
-                Image(systemName: "exclamationmark.triangle")
-                    .foregroundStyle(.orange)
-                    .font(.system(size: 11))
-                    .help(state?.error ?? "")
-            }
         } else if state?.isLoading == true {
             ProgressView()
                 .controlSize(.mini)

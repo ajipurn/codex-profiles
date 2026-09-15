@@ -5,6 +5,7 @@ import SwiftUI
 enum PanelDS {
     static let panelWidth: CGFloat = 440
     static let contentPadding: CGFloat = 16
+    static let maxPanelHeight: CGFloat = 640
     static let cardRadius: CGFloat = 16
     static let rowRadius: CGFloat = 12
     static let controlRadius: CGFloat = 10
