@@ -6,7 +6,7 @@ struct MenuPanel: View {
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @FocusState private var nameFieldFocused: Bool
     @FocusState private var searchFocused: Bool
-    @State private var profilePendingDelete: Profile?
+    @State private var profileConfirmingDelete: Profile?
 
     var body: some View {
         VStack(spacing: 0) {
@@ -44,32 +44,12 @@ struct MenuPanel: View {
         .onChange(of: model.editor) { _, editor in
             nameFieldFocused = editor != nil
         }
-        .confirmationDialog(
-            "Remove saved account?",
-            isPresented: Binding(
-                get: { profilePendingDelete != nil },
-                set: { if !$0 { profilePendingDelete = nil } }
-            ),
-            titleVisibility: .visible
-        ) {
-            Button("Remove saved account", role: .destructive) {
-                if let profilePendingDelete {
-                    model.delete(profilePendingDelete)
-                }
-                profilePendingDelete = nil
-            }
-            Button("Cancel", role: .cancel) {
-                profilePendingDelete = nil
-            }
-        } message: {
-            if profilePendingDelete?.id == model.live?.matchingProfileID {
-                Text("This removes the saved profile. You’ll remain signed in to the account.")
-            } else {
-                Text("You won’t be able to switch back without signing in again.")
+        .onChange(of: model.visibleProfiles.map(\.id)) { _, ids in
+            if let target = profileConfirmingDelete, !ids.contains(target.id) {
+                profileConfirmingDelete = nil
             }
         }
     }
-
     private var panelContentHeight: CGFloat {
         let quotaHeight: CGFloat = model.live?.file?.isChatGPTSession == true ? 208 : 30
         let rowH: CGFloat = model.settings.hideEmails ? 72 : 80
@@ -380,6 +360,51 @@ struct MenuPanel: View {
                 )
             }
 
+            if let target = profileConfirmingDelete, model.editor == nil {
+                HStack(alignment: .top, spacing: 9) {
+                    Image(systemName: "trash.fill")
+                        .foregroundStyle(.red)
+                        .accessibilityHidden(true)
+                    VStack(alignment: .leading, spacing: 4) {
+                        Text("Remove \(model.displayName(for: target))?")
+                            .font(.system(size: 12, weight: .semibold))
+                            .lineLimit(1)
+                            .truncationMode(.middle)
+                            .help(model.displayName(for: target))
+                        Text(target.id == model.live?.matchingProfileID ? "This removes the saved profile. You’ll remain signed in to the account." : "You won’t be able to switch back without signing in again.")
+                            .font(PanelDS.caption)
+                            .foregroundStyle(.secondary)
+                            .fixedSize(horizontal: false, vertical: true)
+                        HStack(spacing: 8) {
+                            Button("Cancel") { profileConfirmingDelete = nil }
+                                .buttonStyle(.bordered)
+                                .controlSize(.small)
+                            Button("Remove account") {
+                                let confirmed = target
+                                profileConfirmingDelete = nil
+                                model.delete(confirmed)
+                            }
+                            .buttonStyle(.borderedProminent)
+                            .controlSize(.small)
+                            .tint(.red)
+                            .disabled(model.isBusy || model.pendingNewLogin)
+                        }
+                        .padding(.top, 2)
+                    }
+                }
+                .padding(10)
+                .background(
+                    RoundedRectangle(cornerRadius: 10, style: .continuous)
+                        .fill(Color.red.opacity(0.08))
+                )
+                .overlay(
+                    RoundedRectangle(cornerRadius: 10, style: .continuous)
+                        .stroke(Color.red.opacity(0.22), lineWidth: 1)
+                )
+                .accessibilityElement(children: .contain)
+                .accessibilityLabel("Confirm removing \(model.displayName(for: target))")
+            }
+
             if model.profiles.isEmpty {
                 emptyState
             } else if model.visibleProfiles.isEmpty {
@@ -581,7 +606,7 @@ struct MenuPanel: View {
                 }
                 Button("Rename…") { model.beginRename(profile) }
                 Button("Remove saved account…", role: .destructive) {
-                    profilePendingDelete = profile
+                    profileConfirmingDelete = profile
                 }
             } label: {
                 Image(systemName: "ellipsis")
@@ -615,7 +640,7 @@ struct MenuPanel: View {
             }
             Button("Rename…") { model.beginRename(profile) }
             Button("Remove saved account…", role: .destructive) {
-                profilePendingDelete = profile
+                profileConfirmingDelete = profile
             }
         }
         .disabled(model.isBusy || model.pendingNewLogin)
@@ -638,6 +663,7 @@ struct MenuPanel: View {
                 .frame(minHeight: 28)
                 .padding(.horizontal, 10)
                 .background(RoundedRectangle(cornerRadius: 8, style: .continuous).fill(Color.primary.opacity(0.05)))
+                .fixedSize(horizontal: true, vertical: false)
             }
             .buttonStyle(.plain)
             .accessibilityLabel("Refresh account usage")
@@ -674,6 +700,7 @@ struct MenuPanel: View {
                     .frame(minHeight: 28)
                     .padding(.horizontal, 10)
                     .background(RoundedRectangle(cornerRadius: 8, style: .continuous).fill(Color.primary.opacity(0.05)))
+                .fixedSize(horizontal: true, vertical: false)
             }
             .menuIndicator(.hidden)
             .accessibilityLabel("Codex Profiles settings")
