@@ -11,7 +11,7 @@ struct MenuPanel: View {
     var body: some View {
         VStack(spacing: 0) {
             ScrollView {
-                VStack(alignment: .leading, spacing: 16) {
+                VStack(alignment: .leading, spacing: 14) {
                     titleBar
                     header
                     feedback
@@ -20,14 +20,14 @@ struct MenuPanel: View {
                     }
                     accountsSection
                 }
-                .padding(18)
+                .padding(PanelDS.contentPadding)
             }
             .scrollBounceBehavior(.basedOnSize)
             .frame(height: panelContentHeight)
 
             footer
         }
-        .frame(width: 420)
+        .frame(width: PanelDS.panelWidth)
         .background(.regularMaterial)
         .onAppear {
             model.refresh()
@@ -71,28 +71,38 @@ struct MenuPanel: View {
     }
 
     private var panelContentHeight: CGFloat {
-        let quotaHeight = model.live?.file?.isChatGPTSession == true ? 190 : 30
+        let quotaHeight = model.live?.file?.isChatGPTSession == true ? 208 : 30
+        let rowH: CGFloat = model.settings.hideEmails ? 72 : 80
         let rowsHeight = model.profiles.isEmpty || model.visibleProfiles.isEmpty
-            ? 175 : 50 + model.visibleProfiles.count * (model.settings.hideEmails ? 64 : 78)
-        let editorHeight = model.editor == nil ? 0 : 190
+            ? 190 : 56 + CGFloat(model.visibleProfiles.count) * rowH
+        let editorHeight = model.editor == nil ? 0 : 196
         let feedbackHeight = (model.error != nil && model.editor == nil)
-            || (model.status != nil && (model.isBusy || model.awaitingLogin)) ? 58 : 0
-        return min(620, CGFloat(180 + quotaHeight + rowsHeight + editorHeight + feedbackHeight))
+            || (model.status != nil && (model.isBusy || model.awaitingLogin)) ? 60 : 0
+        return min(640, CGFloat(188 + quotaHeight + rowsHeight + editorHeight + feedbackHeight))
     }
 
     private var titleBar: some View {
-        HStack {
-            Label("Codex Profiles", systemImage: "person.crop.rectangle.stack")
-                .font(.subheadline.weight(.semibold))
-            Spacer()
+        HStack(spacing: 8) {
+            HStack(spacing: 8) {
+                Image(systemName: "person.crop.rectangle.stack.fill")
+                    .font(.system(size: 13, weight: .semibold))
+                    .foregroundStyle(.white)
+                    .frame(width: 26, height: 26)
+                    .background(
+                        RoundedRectangle(cornerRadius: 7, style: .continuous)
+                            .fill(AvatarPalette.gradient(for: "Codex Profiles"))
+                    )
+                Text("Codex Profiles")
+                    .font(PanelDS.title)
+                Spacer()
+            }
             Button {
                 model.settings.hideEmails.toggle()
                 model.updateSettings()
             } label: {
                 Image(systemName: model.settings.hideEmails ? "eye.slash" : "eye")
-                    .frame(width: 26, height: 26)
             }
-            .buttonStyle(.borderless)
+            .buttonStyle(PanelIconButtonStyle(size: 28, active: model.settings.hideEmails))
             .help(model.settings.hideEmails ? "Show email addresses" : "Hide email addresses")
             .accessibilityLabel(model.settings.hideEmails ? "Show email addresses" : "Hide email addresses")
             .disabled(model.isBusy || model.pendingNewLogin)
@@ -102,43 +112,31 @@ struct MenuPanel: View {
 
     private var header: some View {
         VStack(alignment: .leading, spacing: 12) {
-            Text("CURRENT ACCOUNT")
-                .font(.system(size: 10, weight: .semibold))
-                .tracking(1.2)
-                .foregroundStyle(.secondary)
-            HStack(alignment: .center, spacing: 11) {
-                initialsBadge(
-                    initials: model.live?.identity?.initials ?? "–",
-                    size: 38,
-                    emphasized: true
-                )
-
-                VStack(alignment: .leading, spacing: 2) {
+            HStack(spacing: 8) {
+                Text("CURRENT ACCOUNT")
+                    .font(PanelDS.microLabel)
+                    .tracking(1.4)
+                    .foregroundStyle(.secondary)
+                Spacer(minLength: 8)
+                statusPill
+            }
+            HStack(alignment: .center, spacing: 12) {
+                AccountAvatar(seed: model.currentTitle, initials: model.live?.identity?.initials ?? "–", size: 42, emphasized: true)
+                    .shadow(color: .black.opacity(0.12), radius: 4, y: 1)
+                VStack(alignment: .leading, spacing: 3) {
                     Text(model.currentTitle)
-                        .font(.headline)
+                        .font(PanelDS.headline)
                         .lineLimit(1)
+                        .truncationMode(.middle)
                         .help(model.currentTitle)
                     Text(model.currentSubtitle)
-                        .font(.caption)
+                        .font(PanelDS.caption)
                         .foregroundStyle(.secondary)
-                        .lineLimit(2)
-                        .fixedSize(horizontal: false, vertical: true)
-                }
-
-                Spacer(minLength: 8)
-
-                if model.live?.matchingProfileID != nil {
-                    Label("Active", systemImage: "checkmark.circle.fill")
-                        .font(.caption.weight(.medium))
-                        .foregroundStyle(.green)
-                        .labelStyle(.titleAndIcon)
-                } else if model.needsSave {
-                    Text("Unsaved")
-                        .font(.caption.weight(.medium))
-                        .foregroundStyle(.orange)
+                        .lineLimit(1)
+                        .truncationMode(.middle)
+                        .help(model.currentSubtitle)
                 }
             }
-
             if model.live?.file?.isChatGPTSession == true {
                 TimelineView(.periodic(from: .now, by: 1)) { context in
                     UsageCard(state: model.liveUsage, now: context.date) {
@@ -146,16 +144,42 @@ struct MenuPanel: View {
                     }
                 }
             } else if model.live?.identity?.authMode == "apikey" {
-                Label("API key usage is billed separately.", systemImage: "key")
-                    .font(.caption)
-                    .foregroundStyle(.secondary)
+                HStack(spacing: 8) {
+                    Image(systemName: "key.fill")
+                        .foregroundStyle(.secondary)
+                    Text("API key usage is billed separately.")
+                        .font(PanelDS.caption)
+                        .foregroundStyle(.secondary)
+                }
+                .padding(10)
+                .frame(maxWidth: .infinity, alignment: .leading)
+                .background(RoundedRectangle(cornerRadius: 10, style: .continuous).fill(Color.primary.opacity(0.045))
+                )
             }
         }
         .padding(14)
-        .background(RoundedRectangle(cornerRadius: 16).fill(Color.accentColor.opacity(0.055)))
-        .overlay(RoundedRectangle(cornerRadius: 16).stroke(Color.accentColor.opacity(0.12), lineWidth: 1))
+        .panelCard()
     }
-
+    @ViewBuilder
+    private var statusPill: some View {
+        if model.live?.matchingProfileID != nil {
+            Label("Active", systemImage: "checkmark.circle.fill")
+                .font(.system(size: 11, weight: .semibold))
+                .foregroundStyle(.green)
+                .padding(.horizontal, 9)
+                .padding(.vertical, 4)
+                .background(Capsule().fill(Color.green.opacity(0.12)))
+                .overlay(Capsule().stroke(Color.green.opacity(0.22), lineWidth: 1))
+        } else if model.needsSave {
+            Text("Unsaved")
+                .font(.system(size: 11, weight: .semibold))
+                .foregroundStyle(.orange)
+                .padding(.horizontal, 9)
+                .padding(.vertical, 4)
+                .background(Capsule().fill(Color.orange.opacity(0.13)))
+                .overlay(Capsule().stroke(Color.orange.opacity(0.25), lineWidth: 1))
+        }
+    }
     @ViewBuilder
     private var feedback: some View {
         if let error = model.error, model.editor == nil {
@@ -300,14 +324,17 @@ struct MenuPanel: View {
     }
 
     private var accountsSection: some View {
-        VStack(alignment: .leading, spacing: 9) {
+        VStack(alignment: .leading, spacing: 10) {
             HStack(alignment: .center) {
                 Text("Accounts")
-                    .font(.subheadline.weight(.semibold))
+                    .font(PanelDS.title)
                 if !model.profiles.isEmpty {
                     Text("\(model.profiles.count)")
-                        .font(.caption.monospacedDigit())
-                        .foregroundStyle(.tertiary)
+                        .font(.system(size: 11, weight: .semibold).monospacedDigit())
+                        .foregroundStyle(.secondary)
+                        .padding(.horizontal, 7)
+                        .padding(.vertical, 2)
+                        .background(Capsule().fill(Color.primary.opacity(0.06)))
                 }
                 Spacer()
                 Button {
@@ -375,10 +402,13 @@ struct MenuPanel: View {
 
     private var accountFilters: some View {
         HStack(spacing: 8) {
-            HStack(spacing: 6) {
-                Image(systemName: "magnifyingglass").foregroundStyle(.secondary)
-                TextField("Search accounts", text: Bindable(model).searchText)
+            HStack(spacing: 7) {
+                Image(systemName: "magnifyingglass")
+                    .foregroundStyle(.secondary)
+                    .font(.system(size: 12, weight: .medium))
+                TextField("Search name, email, workspace…", text: Bindable(model).searchText)
                     .textFieldStyle(.plain)
+                    .font(PanelDS.body)
                     .focused($searchFocused)
                     .accessibilityLabel("Search by account name, email, or workspace")
                 if !model.searchText.isEmpty {
@@ -392,14 +422,15 @@ struct MenuPanel: View {
                     .accessibilityLabel("Clear search")
                 }
             }
-            .padding(8)
-            .background(RoundedRectangle(cornerRadius: 8).fill(Color.primary.opacity(0.045)))
+            .padding(.horizontal, 10)
+            .padding(.vertical, 7)
+            .background(RoundedRectangle(cornerRadius: PanelDS.controlRadius, style: .continuous).fill(Color.primary.opacity(0.05)))
+            .overlay(RoundedRectangle(cornerRadius: PanelDS.controlRadius, style: .continuous).stroke(Color.primary.opacity(0.07), lineWidth: 1))
 
-            Toggle(isOn: Bindable(model).favoritesOnly) {
+            Button { model.favoritesOnly.toggle() } label: {
                 Image(systemName: model.favoritesOnly ? "star.fill" : "star")
             }
-            .toggleStyle(.button)
-            .tint(.orange)
+            .buttonStyle(PanelIconButtonStyle(size: 32, active: model.favoritesOnly, tint: .orange))
             .help("Show favorites only")
             .accessibilityLabel("Show favorites only")
 
@@ -413,7 +444,14 @@ struct MenuPanel: View {
                 Text("Active account and favorites stay on top")
             } label: {
                 Image(systemName: "arrow.up.arrow.down")
+                    .font(.system(size: 12.5, weight: .medium))
+                    .foregroundStyle(.secondary)
+                    .frame(width: 32, height: 32)
+                    .background(RoundedRectangle(cornerRadius: 8, style: .continuous).fill(Color.primary.opacity(0.05)))
+                    .overlay(RoundedRectangle(cornerRadius: 8, style: .continuous).stroke(Color.primary.opacity(0.06), lineWidth: 1))
+                    .contentShape(RoundedRectangle(cornerRadius: 8))
             }
+            .menuStyle(.borderlessButton)
             .menuIndicator(.hidden)
             .help("Sort: \(model.settings.sortOrder.title)")
             .accessibilityLabel("Sort accounts")
@@ -422,7 +460,7 @@ struct MenuPanel: View {
     }
 
     private var profileRows: some View {
-        LazyVStack(spacing: 6) {
+        LazyVStack(spacing: 8) {
             ForEach(model.visibleProfiles) { profile in
                 profileRow(profile)
             }
@@ -474,19 +512,16 @@ struct MenuPanel: View {
             Button {
                 model.switchTo(profile)
             } label: {
-                HStack(spacing: 10) {
-                    initialsBadge(
-                        initials: profile.identity?.initials ?? "C",
-                        size: 30,
-                        emphasized: isActive
-                    )
+                HStack(spacing: 11) {
+                    AccountAvatar(seed: profile.identity?.email ?? profile.name, initials: profile.identity?.initials ?? "C", size: 34, emphasized: isActive)
 
                     VStack(alignment: .leading, spacing: 2) {
                         HStack(spacing: 5) {
                             Text(model.displayName(for: profile))
-                                .font(.subheadline.weight(isActive ? .semibold : .regular))
+                                .font(.system(size: 12.5, weight: isActive ? .semibold : .medium))
                                 .foregroundStyle(.primary)
                                 .lineLimit(1)
+                                .truncationMode(.middle)
                             if model.settings.favoriteProfileIDs.contains(profile.id) {
                                 Image(systemName: "star.fill")
                                     .font(.system(size: 9))
@@ -503,22 +538,23 @@ struct MenuPanel: View {
                         if !model.settings.hideEmails, let email = profile.identity?.email,
                            email != profile.displayName {
                             Text(email)
-                                .font(.caption)
+                                .font(PanelDS.caption)
                                 .foregroundStyle(.secondary)
                                 .lineLimit(1)
                                 .help(email)
                         }
                         if let subtitle = profile.identity?.subtitle, !subtitle.isEmpty {
                             Text(subtitle)
-                                .font(.caption)
+                                .font(PanelDS.caption)
                                 .foregroundStyle(.secondary)
                                 .lineLimit(1)
                                 .help(subtitle)
                         }
                     }
 
-                    Spacer(minLength: 8)
+                    Spacer(minLength: 10)
                     UsageCompactLabel(state: usageState)
+                        .layoutPriority(-1)
                 }
                 .contentShape(Rectangle())
             }
@@ -542,24 +578,30 @@ struct MenuPanel: View {
                 }
             } label: {
                 Image(systemName: "ellipsis")
-                    .frame(width: 28, height: 28)
-                    .contentShape(Rectangle())
+                    .font(.system(size: 13, weight: .semibold))
+                    .foregroundStyle(.secondary)
+                    .frame(width: 30, height: 30)
+                    .background(RoundedRectangle(cornerRadius: 8, style: .continuous).fill(Color.primary.opacity(0.05)))
+                    .overlay(RoundedRectangle(cornerRadius: 8, style: .continuous).stroke(Color.primary.opacity(0.06), lineWidth: 1))
+                    .contentShape(RoundedRectangle(cornerRadius: 8))
             }
+            .menuStyle(.borderlessButton)
             .menuIndicator(.hidden)
             .accessibilityLabel("Actions for \(model.displayName(for: profile))")
             .help("Account actions")
         }
-        .padding(.leading, 9)
-        .padding(.trailing, 7)
-        .padding(.vertical, 7)
+        .padding(.leading, 10)
+        .padding(.trailing, 8)
+        .padding(.vertical, 9)
         .background(
-            RoundedRectangle(cornerRadius: 10, style: .continuous)
-                .fill(isActive ? Color.accentColor.opacity(0.09) : Color.primary.opacity(0.025))
+            RoundedRectangle(cornerRadius: PanelDS.rowRadius, style: .continuous)
+                .fill(isActive ? Color.accentColor.opacity(0.10) : Color.primary.opacity(0.032))
         )
         .overlay(
-            RoundedRectangle(cornerRadius: 10, style: .continuous)
-                .stroke(isActive ? Color.accentColor.opacity(0.16) : Color.clear, lineWidth: 1)
+            RoundedRectangle(cornerRadius: PanelDS.rowRadius, style: .continuous)
+                .stroke(isActive ? Color.accentColor.opacity(0.22) : Color.primary.opacity(0.06), lineWidth: 1)
         )
+        .shadow(color: isActive ? Color.accentColor.opacity(0.10) : .clear, radius: 6, y: 1)
         .contextMenu {
             Button(model.settings.favoriteProfileIDs.contains(profile.id) ? "Remove from favorites" : "Add to favorites") {
                 model.toggleFavorite(profile)
@@ -586,9 +628,11 @@ struct MenuPanel: View {
                     }
                     Text(model.isRefreshingUsage ? "Refreshing…" : "Refresh")
                 }
-                .frame(minHeight: 24)
+                .frame(minHeight: 28)
+                .padding(.horizontal, 10)
+                .background(RoundedRectangle(cornerRadius: 8, style: .continuous).fill(Color.primary.opacity(0.05)))
             }
-            .buttonStyle(.borderless)
+            .buttonStyle(.plain)
             .accessibilityLabel("Refresh account usage")
             .keyboardShortcut("r", modifiers: .command)
             .disabled(model.isBusy || model.pendingNewLogin || model.isRefreshingUsage)
@@ -620,35 +664,21 @@ struct MenuPanel: View {
                     .keyboardShortcut("q", modifiers: .command)
             } label: {
                 Label("Settings", systemImage: "gearshape")
-                    .frame(minHeight: 24)
+                    .frame(minHeight: 28)
+                    .padding(.horizontal, 10)
+                    .background(RoundedRectangle(cornerRadius: 8, style: .continuous).fill(Color.primary.opacity(0.05)))
             }
             .menuIndicator(.hidden)
             .accessibilityLabel("Codex Profiles settings")
             .disabled(model.isBusy || model.pendingNewLogin)
         }
-        .font(.caption)
-        .padding(.horizontal, 16)
+        .font(PanelDS.caption)
+        .padding(.horizontal, 12)
         .padding(.vertical, 10)
         .background(.thinMaterial)
         .overlay(alignment: .top) {
             Divider().opacity(0.35)
         }
-    }
-
-    private func initialsBadge(
-        initials: String,
-        size: CGFloat,
-        emphasized: Bool
-    ) -> some View {
-        ZStack {
-            Circle()
-                .fill(emphasized ? Color.accentColor.opacity(0.14) : Color.primary.opacity(0.065))
-            Text(initials)
-                .font(.caption.weight(.semibold).monospaced())
-                .foregroundStyle(emphasized ? Color.accentColor : Color.primary.opacity(0.72))
-        }
-        .frame(width: size, height: size)
-        .accessibilityHidden(true)
     }
 
     private func profileAccessibilityLabel(_ profile: Profile, active: Bool) -> String {

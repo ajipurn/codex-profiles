@@ -9,28 +9,31 @@ struct UsageCard: View {
     var body: some View {
         Group {
             if let usage = state.usage {
-                VStack(alignment: .leading, spacing: 9) {
-                    HStack(alignment: .firstTextBaseline) {
+                VStack(alignment: .leading, spacing: 10) {
+                    HStack(alignment: .center, spacing: 8) {
                         Text("Remaining quota")
-                            .font(.caption.weight(.semibold))
+                            .font(.system(size: 11, weight: .semibold))
                         if state.isLoading {
                             ProgressView().controlSize(.mini)
                         }
-                        Spacer()
+                        Spacer(minLength: 8)
                         if let plan = usage.planType {
                             Text(plan.localizedCapitalized)
-                                .font(.caption)
-                                .foregroundStyle(.tertiary)
+                                .font(.system(size: 10, weight: .semibold))
+                                .foregroundStyle(.secondary)
+                                .padding(.horizontal, 8)
+                                .padding(.vertical, 3)
+                                .background(Capsule().fill(Color.primary.opacity(0.06)))
                         }
                     }
 
                     if usage.severity == .exhausted {
-                        Label("Usage limit reached", systemImage: "pause.circle.fill")
-                            .font(.caption.weight(.medium))
+                        Label("Limit reached — switch accounts to keep working", systemImage: "pause.circle.fill")
+                            .font(.system(size: 11, weight: .medium))
                             .foregroundStyle(.red)
                     } else if usage.severity == .critical || usage.severity == .warning {
-                        Label("Running low · switch to another saved account anytime", systemImage: "exclamationmark.circle")
-                            .font(.caption)
+                        Label("Running low — another saved account is ready", systemImage: "exclamationmark.circle.fill")
+                            .font(PanelDS.caption)
                             .foregroundStyle(.orange)
                             .fixedSize(horizontal: false, vertical: true)
                     }
@@ -61,9 +64,12 @@ struct UsageCard: View {
                         .foregroundStyle(.orange)
                     }
 
-                    Text(freshnessText)
-                        .font(.system(size: 10))
-                        .foregroundStyle(.secondary)
+                    Text(liveText)
+                        .font(.system(size: 10, weight: .medium))
+                        .foregroundStyle(.green)
+                        .padding(.horizontal, 7)
+                        .padding(.vertical, 3)
+                        .background(Capsule().fill(Color.green.opacity(0.12)))
                         .help(usage.fetchedAt.formatted(date: .abbreviated, time: .standard))
 
                     if usage.creditsBalance != nil || (usage.resetCredits ?? 0) > 0 {
@@ -110,7 +116,7 @@ struct UsageCard: View {
         }
     }
 
-    private var freshnessText: String {
+    private var liveText: String {
         guard let fetchedAt = state.usage?.fetchedAt else { return "" }
         let age = now.timeIntervalSince(fetchedAt)
         if age < 8 { return "Live" }
@@ -124,22 +130,22 @@ struct UsageMeter: View {
     var now: Date = .now
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 5) {
+        VStack(alignment: .leading, spacing: 6) {
             HStack(alignment: .firstTextBaseline, spacing: 8) {
                 Text(expandedWindowLabel)
-                    .font(.caption.weight(.medium))
+                    .font(.system(size: 11, weight: .medium))
                     .foregroundStyle(.secondary)
                 Text(label)
-                    .font(.caption.weight(.semibold).monospacedDigit())
+                    .font(.system(size: 11, weight: .semibold).monospacedDigit())
                     .foregroundStyle(tint)
                 Spacer(minLength: 8)
                 if let resetAt = window.resetAt, resetAt <= now {
                     Text("Reset due · refresh")
-                        .font(.caption.monospacedDigit())
+                        .font(.system(size: 11).monospacedDigit())
                         .foregroundStyle(.secondary)
                 } else if let caption = window.resetCaption {
                     Text(caption)
-                        .font(.caption.monospacedDigit())
+                        .font(.system(size: 11).monospacedDigit())
                         .foregroundStyle(.secondary)
                         .help(window.resetsIn.map { "Resets in \($0)" } ?? "")
                 }
@@ -182,13 +188,13 @@ struct QuotaBar: View {
         GeometryReader { geo in
             ZStack(alignment: .leading) {
                 Capsule()
-                    .fill(Color.primary.opacity(0.09))
+                    .fill(Color.primary.opacity(0.10))
                 Capsule()
-                    .fill(tint)
+                    .fill(LinearGradient(colors: [tint.opacity(0.72), tint], startPoint: .leading, endPoint: .trailing))
                     .frame(width: barWidth(in: geo.size.width))
             }
         }
-        .frame(height: 4)
+        .frame(height: 6)
         .accessibilityHidden(true)
     }
 
@@ -204,25 +210,28 @@ struct UsageCompactLabel: View {
 
     var body: some View {
         if let usage = state?.usage, !usage.windows.isEmpty {
-            VStack(alignment: .trailing, spacing: 2) {
+            VStack(alignment: .trailing, spacing: 3) {
                 ForEach(Array(usage.windows.enumerated()), id: \.offset) { _, window in
                     HStack(spacing: 5) {
                         Text("\(window.remainingDisplay)%")
-                            .font(.caption.weight(.semibold).monospacedDigit())
+                            .font(.system(size: 12, weight: .semibold).monospacedDigit())
                             .foregroundStyle(state?.error == nil ? color(for: window) : .secondary)
                         Text(window.label)
-                            .font(.caption)
-                            .foregroundStyle(.tertiary)
+                            .font(.system(size: 11))
+                            .foregroundStyle(.secondary)
+                            .frame(minWidth: 22, alignment: .leading)
                     }
                 }
             }
+            .frame(minWidth: 62, alignment: .trailing)
+            .lineLimit(1)
             .accessibilityElement(children: .combine)
             .accessibilityLabel(usage.compactLine + (state?.error == nil ? " remaining" : ", last known usage"))
             .help(state?.error.map { "Last known usage. " + $0 } ?? "Remaining quota · updated \(usage.fetchedAt.formatted())")
             if state?.error != nil {
                 Image(systemName: "exclamationmark.triangle")
                     .foregroundStyle(.orange)
-                    .font(.caption)
+                    .font(.system(size: 11))
                     .help(state?.error ?? "")
             }
         } else if state?.isLoading == true {
@@ -231,7 +240,7 @@ struct UsageCompactLabel: View {
                 .accessibilityLabel("Loading usage")
         } else if let error = state?.error {
             Image(systemName: "exclamationmark.triangle.fill")
-                .font(.caption)
+                .font(.system(size: 12))
                 .foregroundStyle(.orange)
                 .help(error)
                 .accessibilityLabel(error)
