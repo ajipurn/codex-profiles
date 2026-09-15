@@ -1,5 +1,10 @@
 # Changelog
 
+## 1.3.1
+
+- Fix app window closing when confirming account removal by replacing the modal dialog with an inline confirmation banner
+- Fix stretched footer buttons so Refresh and Settings hug their content
+
 ## 1.3.0
 
 - Polish panel visual hierarchy and readability
