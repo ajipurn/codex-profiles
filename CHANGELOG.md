@@ -1,5 +1,9 @@
 # Changelog
 
+## 1.3.2
+
+- Fix stretched footer buttons by applying content-hugging size outside the button and menu styles
+
 ## 1.3.1
 
 - Fix app window closing when confirming account removal by replacing the modal dialog with an inline confirmation banner
