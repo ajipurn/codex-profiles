@@ -71,14 +71,21 @@ struct MenuPanel: View {
     }
 
     private var panelContentHeight: CGFloat {
-        let quotaHeight = model.live?.file?.isChatGPTSession == true ? 208 : 30
+        let quotaHeight: CGFloat = model.live?.file?.isChatGPTSession == true ? 208 : 30
         let rowH: CGFloat = model.settings.hideEmails ? 72 : 80
-        let rowsHeight = model.profiles.isEmpty || model.visibleProfiles.isEmpty
-            ? 190 : 56 + CGFloat(model.visibleProfiles.count) * rowH
-        let editorHeight = model.editor == nil ? 0 : 196
-        let feedbackHeight = (model.error != nil && model.editor == nil)
-            || (model.status != nil && (model.isBusy || model.awaitingLogin)) ? 60 : 0
-        return min(640, CGFloat(188 + quotaHeight + rowsHeight + editorHeight + feedbackHeight))
+        let rowCount = CGFloat(max(0, model.visibleProfiles.count))
+        let rowsHeight: CGFloat
+        if model.profiles.isEmpty || model.visibleProfiles.isEmpty {
+            rowsHeight = 190
+        } else {
+            rowsHeight = 56 + rowCount * rowH
+        }
+        let editorHeight: CGFloat = model.editor == nil ? 0 : 196
+        let hasErrorBanner = model.error != nil && model.editor == nil
+        let hasStatusBanner = model.status != nil && (model.isBusy || model.awaitingLogin)
+        let feedbackHeight: CGFloat = (hasErrorBanner || hasStatusBanner) ? 60 : 0
+        let total: CGFloat = 188 + quotaHeight + rowsHeight + editorHeight + feedbackHeight
+        return min(640, total)
     }
 
     private var titleBar: some View {
