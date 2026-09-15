@@ -663,9 +663,9 @@ struct MenuPanel: View {
                 .frame(minHeight: 28)
                 .padding(.horizontal, 10)
                 .background(RoundedRectangle(cornerRadius: 8, style: .continuous).fill(Color.primary.opacity(0.05)))
-                .fixedSize(horizontal: true, vertical: false)
             }
             .buttonStyle(.plain)
+            .fixedSize(horizontal: true, vertical: false)
             .accessibilityLabel("Refresh account usage")
             .keyboardShortcut("r", modifiers: .command)
             .disabled(model.isBusy || model.pendingNewLogin || model.isRefreshingUsage)
@@ -700,9 +700,10 @@ struct MenuPanel: View {
                     .frame(minHeight: 28)
                     .padding(.horizontal, 10)
                     .background(RoundedRectangle(cornerRadius: 8, style: .continuous).fill(Color.primary.opacity(0.05)))
-                .fixedSize(horizontal: true, vertical: false)
             }
+            .menuStyle(.borderlessButton)
             .menuIndicator(.hidden)
+            .fixedSize(horizontal: true, vertical: false)
             .accessibilityLabel("Codex Profiles settings")
             .disabled(model.isBusy || model.pendingNewLogin)
         }
