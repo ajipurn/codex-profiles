@@ -1,5 +1,11 @@
 # Changelog
 
+## 1.3.3
+
+- Redesign the app icon and menu bar icon as a stacked profile cards mark
+- Draw both icons in code so they regenerate deterministically with `make icons`
+- Menu bar mark keeps a clear two-card silhouette at 22 px
+
 ## 1.3.2
 
 - Fix stretched footer buttons by applying content-hugging size outside the button and menu styles
