@@ -13,6 +13,8 @@ struct CodexProfilesApp: App {
         _model = State(initialValue: model)
         if model.isDemo {
             Task { @MainActor in model.showDemoWindow() }
+        } else {
+            Task { @MainActor in MoveToAgentProfiles.offer(appName: "Codex Profiles") }
         }
     }
 

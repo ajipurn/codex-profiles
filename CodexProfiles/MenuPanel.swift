@@ -735,6 +735,8 @@ struct MenuPanel: View {
                 }
                 Text("Shortcuts: ⌘F Search · ⌘N Add · ⌘R Refresh")
                 Divider()
+                Button("Move to Agent Profiles…") { MoveToAgentProfiles.offer(appName: "Codex Profiles") }
+                Divider()
                 Button("Quit Codex Profiles") { model.quit() }
                     .keyboardShortcut("q", modifiers: .command)
             } label: {

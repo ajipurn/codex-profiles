@@ -6,6 +6,9 @@
 
 A native macOS menu bar app for switching Codex accounts and keeping track of remaining usage.
 
+> [!IMPORTANT]
+> **Codex Profiles is now part of [Agent Profiles](https://github.com/ajipurn/agent-profiles)**, one menu bar app for Claude and Codex accounts. It reads the accounts you saved here, so nothing needs setting up again. Codex Profiles 1.4.0 is the last release.
+
 <img src="CodexProfiles/Assets.xcassets/AppIcon.appiconset/icon_128x128.png" width="96" alt="Codex Profiles icon">
 
 **macOS 14+ · Apple Silicon and Intel · SwiftUI · Signed automatic updates**

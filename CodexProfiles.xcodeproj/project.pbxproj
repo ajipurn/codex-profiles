@@ -28,6 +28,7 @@
 		D1636210E8B007B667049002 /* CodexUsage.swift in Sources */ = {isa = PBXBuildFile; fileRef = E7E9DAE9A8C4C73500EF314C /* CodexUsage.swift */; };
 		D31FBDDF7280D5E0D68739D1 /* CodexUsageClient.swift in Sources */ = {isa = PBXBuildFile; fileRef = 229C6578D14DDF58BE33C08E /* CodexUsageClient.swift */; };
 		E568881C2AF4B7E37200622B /* CodexClients.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4DFA585CC57762DFC3A3E9A0 /* CodexClients.swift */; };
+		E5910B23A9D366070025EBBD /* MoveToAgentProfiles.swift in Sources */ = {isa = PBXBuildFile; fileRef = CCF099B727DD269C3F4EDD1D /* MoveToAgentProfiles.swift */; };
 		E760B057CD84969687AAC4CA /* AuthSnapshot.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0511AC52830673F57C7D3A23 /* AuthSnapshot.swift */; };
 		EA96C0DFCEC626A9D0AF4E63 /* CodexProfilesApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = F5B910F22DF1F42369D17153 /* CodexProfilesApp.swift */; };
 		EF1B1175A946E400706813A9 /* MenuBarIcon.png in Resources */ = {isa = PBXBuildFile; fileRef = E76019790BEEF14A615471CD /* MenuBarIcon.png */; };
@@ -63,6 +64,7 @@
 		C32C209900D7A903756491AC /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist; path = Info.plist; sourceTree = "<group>"; };
 		C565715D6A1E92FA44651C02 /* BrandImage.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BrandImage.swift; sourceTree = "<group>"; };
 		C64F4D0B0980F8BB9255050B /* AppModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppModel.swift; sourceTree = "<group>"; };
+		CCF099B727DD269C3F4EDD1D /* MoveToAgentProfiles.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MoveToAgentProfiles.swift; sourceTree = "<group>"; };
 		D0EA53AB3D8A9E3A0C6D678B /* ProfileStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProfileStore.swift; sourceTree = "<group>"; };
 		D9E530D21DE822E0EC169707 /* MenuPanel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MenuPanel.swift; sourceTree = "<group>"; };
 		E039AF014E29E16878E331F6 /* UsageViews.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UsageViews.swift; sourceTree = "<group>"; };
@@ -140,6 +142,7 @@
 				F5B910F22DF1F42369D17153 /* CodexProfilesApp.swift */,
 				C32C209900D7A903756491AC /* Info.plist */,
 				D9E530D21DE822E0EC169707 /* MenuPanel.swift */,
+				CCF099B727DD269C3F4EDD1D /* MoveToAgentProfiles.swift */,
 				A690EB0D8ED6F627358BCDC8 /* PanelStyle.swift */,
 				76E7A68F7FF17B2EC8A6B633 /* SystemCodexClients.swift */,
 				AEE16E0EA29D35F96C7A2CDB /* UpdateController.swift */,
@@ -288,6 +291,7 @@
 				7676D686E6A83AE8D6A06CDC /* BrandImage.swift in Sources */,
 				EA96C0DFCEC626A9D0AF4E63 /* CodexProfilesApp.swift in Sources */,
 				41D1A577A3F0373B5BDF4406 /* MenuPanel.swift in Sources */,
+				E5910B23A9D366070025EBBD /* MoveToAgentProfiles.swift in Sources */,
 				98B4AACC0689661FA5B16773 /* PanelStyle.swift in Sources */,
 				A19B5418EA9D6D42BC65552D /* SystemCodexClients.swift in Sources */,
 				1760B1D125DA8B89BFB648BF /* UpdateController.swift in Sources */,
