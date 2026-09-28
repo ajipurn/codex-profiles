@@ -7,7 +7,7 @@ icons:
 	swift scripts/make-icons.swift "$(CURDIR)"
 
 build:
-	swift build --product CodexProfiles
+	zsh -c 'source scripts/swift-env.sh && swift build "$${SWIFT_FLAGS[@]}" --product CodexProfiles'
 
 test:
 	./scripts/test.sh

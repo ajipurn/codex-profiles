@@ -3,6 +3,7 @@ set -euo pipefail
 
 ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 cd "$ROOT"
+source scripts/swift-env.sh
 CONFIGURATION="${1:-debug}"
 [[ "$CONFIGURATION" == debug || "$CONFIGURATION" == release ]] || { echo "Use debug or release" >&2; exit 1; }
 python3 scripts/release_metadata.py check
@@ -13,8 +14,8 @@ for arch in ${=BUILD_ARCHS:-}; do
   [[ "$arch" == arm64 || "$arch" == x86_64 ]] || { echo "Unsupported architecture: $arch" >&2; exit 1; }
   ARCH_ARGS+=(--arch "$arch")
 done
-swift build -c "$CONFIGURATION" --product CodexProfiles "${ARCH_ARGS[@]}"
-BIN_DIR="$(swift build -c "$CONFIGURATION" --show-bin-path "${ARCH_ARGS[@]}")"
+swift build "${SWIFT_FLAGS[@]}" -c "$CONFIGURATION" --product CodexProfiles "${ARCH_ARGS[@]}"
+BIN_DIR="$(swift build "${SWIFT_FLAGS[@]}" -c "$CONFIGURATION" --show-bin-path "${ARCH_ARGS[@]}")"
 APP_DIR="$ROOT/dist/Codex Profiles.app"
 MACOS_DIR="$APP_DIR/Contents/MacOS"
 RESOURCES_DIR="$APP_DIR/Contents/Resources"
