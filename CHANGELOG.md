@@ -1,5 +1,12 @@
 # Changelog
 
+## 1.4.0
+
+Codex Profiles is now part of [Agent Profiles](https://github.com/ajipurn/agent-profiles), one menu bar app for Claude and Codex accounts. This is the last Codex Profiles release.
+
+- At launch, Codex Profiles offers to open or download Agent Profiles, which uses the same saved accounts
+- Settings → Move to Agent Profiles… does the same at any time
+
 ## 1.3.3
 
 - Redesign the app icon and menu bar icon as a stacked profile cards mark
